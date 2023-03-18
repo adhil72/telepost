@@ -1,0 +1,18 @@
+{
+  "name": "telepost",
+  "version": "1.0.0",
+  "description": "desc",
+  "main": "index.js",
+  "scripts": {
+    "start": "sh run.sh"
+  },
+  "author": "github.com/adhil72",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "telegram": "^2.15.10"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.3"
+  }
+}
