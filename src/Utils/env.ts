@@ -22,5 +22,12 @@ export default {
             throw new Error("Missing : STRING_SESSION")
         }
         return value as string
+    },
+    BOT_TOKEN: ()=>{
+        var value = process.env.BOT_TOKEN
+        if (!value) {
+            throw new Error("Missing : BOT_TOKEN")
+        }
+        return value as string
     }
 }

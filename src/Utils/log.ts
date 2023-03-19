@@ -1,9 +1,9 @@
 export default {
     m: (message: String) => {
-        console.log("\x1b[32m", `message: ${message} [${new Date()}]`);
+        console.log("\x1b[32m", `message: ${message}`);
     },
     e: (message: any) => {
-        console.log("\x1b[31m", `message: ${message} [${new Date()}]`);
+        console.log("\x1b[31m", `message: ${message}`);
     },
     g: (question: String) => {
         return new Promise<string>((r) => {

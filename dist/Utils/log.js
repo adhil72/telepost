@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
     m: (message) => {
-        console.log("\x1b[32m", `message: ${message} [${new Date()}]`);
+        console.log("\x1b[32m", `message: ${message}`);
     },
     e: (message) => {
-        console.log("\x1b[31m", `message: ${message} [${new Date()}]`);
+        console.log("\x1b[31m", `message: ${message}`);
     },
     g: (question) => {
         return new Promise((r) => {
