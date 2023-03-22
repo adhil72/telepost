@@ -84,6 +84,9 @@ export default {
              
             log.m(`BOT: media message request done in ${time.getTime() - new Date().getTime()}`)
         })
+        bot.catch((e)=>{
+            bot.api.sendMessage('me',e.message)
+        })
         bot.start()
     }
 }
