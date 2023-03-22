@@ -6,6 +6,8 @@ import { user, post } from "../Utils/types"
 import { userFound } from "../Utils/Erros";
 import { downloader } from "../Utils/Donwloader";
 import * as bigInt from 'big-integer';
+import { unlinkSync } from "fs";
+import { unlink } from "fs/promises";
 
 const DATABASE_CHANNEL = -1001904275709
 const MESSAGES_CHANNEL = -1001969063685
@@ -67,8 +69,10 @@ export default {
                     content[1] = result.id + ""
                     entity.content = content.join('<::>')
                     await client.sendFile(MESSAGES_CHANNEL, { file: result.name, caption: JSON.stringify(entity) })
-                } else {
+                    await unlink(fileUrl.split('/')[fileUrl.split('/').length-1])
                     return 200
+                } else {
+                    return 503
                 }
 
 
