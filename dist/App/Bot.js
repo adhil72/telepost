@@ -18,10 +18,19 @@ exports.default = {
             let res = await Db_1.default.userLogin(user);
             ctx.reply(res + "");
         });
+        bot.command("posts", async (ctx) => {
+            let time = new Date();
+            log_1.default.m("BOT: posts request");
+            var posts = await Db_1.default.getPosts();
+            posts.forEach((p) => {
+                ctx.reply(p.message);
+            });
+            log_1.default.m(`BOT: posts request done in ${new Date().getTime() - time.getTime()}`);
+        });
         bot.on('message:text', async (ctx) => {
             let time = new Date();
             log_1.default.m("BOT: text message request");
-            let message = await (0, checks_1.parceJson)(ctx.message.text.replace('\n', ''));
+            let message = await (0, checks_1.parceJson)(ctx.message.text);
             if (message) {
                 if ((0, checks_1.isType)(types_1.postObject, message)) {
                     let msg = message;
@@ -40,23 +49,23 @@ exports.default = {
             else {
                 ctx.reply("503");
             }
-            log_1.default.m(`BOT: text message request done in ${time.getTime() - new Date().getTime()}`);
+            log_1.default.m(`BOT: text message request done in ${new Date().getTime() - time.getTime()}`);
         });
         bot.on(['message:photo', 'message:video'], async (ctx) => {
             let time = new Date();
             log_1.default.m("BOT: media message request");
             if (ctx.message.caption == null) {
-                ctx.reply("503");
+                ctx.reply("503 no caption");
                 return;
             }
-            let message = await (0, checks_1.parceJson)(ctx.message.caption.replace('\n', ''));
+            let message = await (0, checks_1.parceJson)(ctx.message.caption);
             if (message) {
                 if ((0, checks_1.isType)(types_1.postObject, message)) {
                     let msg = message;
                     if (msg.messageType == 'f') {
                         let file = await ctx.getFile();
                         if (!file.file_path) {
-                            ctx.reply("503");
+                            ctx.reply("503 no file path");
                             return;
                         }
                         msg.content += "<::>" + file.file_path;
@@ -64,15 +73,15 @@ exports.default = {
                         ctx.reply(res + "");
                     }
                     else {
-                        ctx.reply("503");
+                        ctx.reply("503 ");
                     }
                 }
                 else {
-                    ctx.reply("503");
+                    ctx.reply("503 incoreect message type");
                 }
             }
             else {
-                ctx.reply("503");
+                ctx.reply("503 not parcable");
             }
             log_1.default.m(`BOT: media message request done in ${time.getTime() - new Date().getTime()}`);
         });

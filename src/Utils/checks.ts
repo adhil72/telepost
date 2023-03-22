@@ -1,13 +1,12 @@
 import log from "./log"
 
 export const parceJson = (text:string)=>{
+
     return new Promise((r)=>{
         try {
             let parceble = JSON.parse(text)
             r(parceble)
-        } catch (error) {
-            console.log(error);
-            
+        } catch (error) {            
             log.e(error)
             r(null)
         }

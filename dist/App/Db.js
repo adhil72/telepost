@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -7,6 +30,8 @@ const telegram_1 = require("telegram");
 const sessions_1 = require("telegram/sessions");
 const log_1 = __importDefault(require("../Utils/log"));
 const env_1 = __importDefault(require("../Utils/env"));
+const Donwloader_1 = require("../Utils/Donwloader");
+const bigInt = __importStar(require("big-integer"));
 const DATABASE_CHANNEL = -1001904275709;
 const MESSAGES_CHANNEL = -1001969063685;
 const client = new telegram_1.TelegramClient(new sessions_1.StringSession(env_1.default.STRING_SESSION()), env_1.default.API_ID(), env_1.default.API_HASH(), {
@@ -30,7 +55,12 @@ exports.default = {
             return message.message && message.message.includes(JSON.stringify(user));
         });
         if (searchResults.length == 0) {
-            await client.sendMessage(DATABASE_CHANNEL, { message: JSON.stringify(user) });
+            if (user.username == null) {
+                return 504;
+            }
+            else {
+                await client.sendMessage(DATABASE_CHANNEL, { message: JSON.stringify(user) });
+            }
             log_1.default.m("create user request: done");
             return 200;
         }
@@ -45,11 +75,45 @@ exports.default = {
             return message.message && message.message.includes(JSON.stringify(entity.user));
         });
         if (searchResults) {
-            await client.sendMessage(MESSAGES_CHANNEL, { message: JSON.stringify(entity) });
+            if (entity.messageType = 'f') {
+                var fileUrl = `https://api.telegram.org/file/bot${env_1.default.BOT_TOKEN()}/${entity.content.split('<::>')[1]}`;
+                //uploading file
+                let downloaded = await Donwloader_1.downloader.download(fileUrl);
+                if (downloaded != null) {
+                    const result = await client.uploadFile({
+                        file: downloaded, workers: 5
+                    });
+                    var content = entity.content.split('<::>');
+                    content[1] = result.id + "";
+                    entity.content = content.join('<::>');
+                    await client.sendFile(MESSAGES_CHANNEL, { file: result.name, caption: JSON.stringify(entity) });
+                }
+                else {
+                    return 200;
+                }
+            }
+            else {
+                await client.sendMessage(MESSAGES_CHANNEL, { message: JSON.stringify(entity) });
+            }
             return 200;
         }
         else {
             return 404;
         }
+    },
+    getPosts: async () => {
+        let messages = await client.getMessages(MESSAGES_CHANNEL, {});
+        messages = messages.filter((message) => {
+            return message.message;
+        });
+        return messages;
     }
 };
+function numberToBytes(number) {
+    const buffer = new ArrayBuffer(4);
+    const view = new DataView(buffer);
+    view.setUint32(0, number);
+    const uint8Array = new Uint8Array(buffer);
+    const bigInteger = bigInt.fromArray([...uint8Array], 256);
+    return bigInteger;
+}

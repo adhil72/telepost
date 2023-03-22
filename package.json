@@ -9,6 +9,7 @@
   "author": "github.com/adhil72",
   "license": "ISC",
   "dependencies": {
+    "big-integer": "^1.6.51",
     "dotenv": "^16.0.3",
     "grammy": "^1.15.3",
     "telegram": "^2.15.10"

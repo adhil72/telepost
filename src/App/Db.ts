@@ -4,6 +4,8 @@ import log from "../Utils/log"
 import env from "../Utils/env"
 import { user, post } from "../Utils/types"
 import { userFound } from "../Utils/Erros";
+import { downloader } from "../Utils/Donwloader";
+import * as bigInt from 'big-integer';
 
 const DATABASE_CHANNEL = -1001904275709
 const MESSAGES_CHANNEL = -1001969063685
@@ -32,7 +34,11 @@ export default {
             return message.message && message.message.includes(JSON.stringify(user));
         });
         if (searchResults.length == 0) {
-            await client.sendMessage(DATABASE_CHANNEL, { message: JSON.stringify(user) })
+            if (user.username == null) {
+                return 504
+            } else {
+                await client.sendMessage(DATABASE_CHANNEL, { message: JSON.stringify(user) })
+            }
             log.m("create user request: done")
             return 200
         } else {
@@ -46,11 +52,58 @@ export default {
             return message.message && message.message.includes(JSON.stringify(entity.user));
         });
         if (searchResults) {
-            await client.sendMessage(MESSAGES_CHANNEL, { message: JSON.stringify(entity) })
+
+            if (entity.messageType = 'f') {
+                var fileUrl = `https://api.telegram.org/file/bot${env.BOT_TOKEN()}/${entity.content.split('<::>')[1]}`
+
+                //uploading file
+                let downloaded = await downloader.download(fileUrl)
+                if (downloaded != null) {
+                    const result = await client.uploadFile({
+                        file: downloaded, workers: 5
+                    })
+
+                    var content = entity.content.split('<::>')
+                    content[1] = result.id + ""
+                    entity.content = content.join('<::>')
+                    await client.sendFile(MESSAGES_CHANNEL, { file: result.name, caption: JSON.stringify(entity) })
+                } else {
+                    return 200
+                }
+
+
+
+            } else {
+                await client.sendMessage(MESSAGES_CHANNEL, { message: JSON.stringify(entity) })
+            }
+
             return 200
         } else {
             return 404
         }
+    },
+    getPosts: async () => {
+        let messages = await client.getMessages(MESSAGES_CHANNEL, {})
+
+        messages = messages.filter((message) => {
+            return message.message 
+        });
+        
+
+        return messages
+
     }
 
+}
+
+function numberToBytes(number: number) {
+    const buffer = new ArrayBuffer(4);
+    const view = new DataView(buffer);
+    view.setUint32(0, number);
+
+    const uint8Array = new Uint8Array(buffer);
+
+    const bigInteger = bigInt.fromArray([...uint8Array], 256);
+
+    return bigInteger;
 }

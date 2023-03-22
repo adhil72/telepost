@@ -12,7 +12,6 @@ const parceJson = (text) => {
             r(parceble);
         }
         catch (error) {
-            console.log(error);
             log_1.default.e(error);
             r(null);
         }
