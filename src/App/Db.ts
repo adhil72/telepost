@@ -45,7 +45,7 @@ export default {
             return 200
         } else {
             log.m("create user request: done")
-            return 503
+            return 200
         }
     },
     addPost: async (entity: post) => {
