@@ -1,10 +1,14 @@
 export interface user {
-    id: number, first_name: string, username: string
+    id: string, username:string, firstname:string
 }
 export interface post {
-    user: user,
-    messageType: 'f' | 't',
-    content: string
+    userId: string,
+    caption: string
+}
+
+export interface request{
+    req:"login"| "photo"|"posts",
+    body:post
 }
 
 export const userObject = {

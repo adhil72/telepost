@@ -1,12 +1,15 @@
 export interface user {
-    id: number;
-    first_name: string;
+    id: string;
     username: string;
+    firstname: string;
 }
 export interface post {
-    user: user;
-    messageType: 'f' | 't';
-    content: string;
+    userId: string;
+    caption: string;
+}
+export interface request {
+    req: "login" | "photo";
+    body: post;
 }
 export declare const userObject: {
     id: string;

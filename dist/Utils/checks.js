@@ -1,10 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isType = exports.parceJson = void 0;
-const log_1 = __importDefault(require("./log"));
 const parceJson = (text) => {
     return new Promise((r) => {
         try {
@@ -12,7 +8,6 @@ const parceJson = (text) => {
             r(parceble);
         }
         catch (error) {
-            log_1.default.e(error);
             r(null);
         }
     });

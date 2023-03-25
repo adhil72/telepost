@@ -7,7 +7,6 @@ export const parceJson = (text:string)=>{
             let parceble = JSON.parse(text)
             r(parceble)
         } catch (error) {            
-            log.e(error)
             r(null)
         }
     })

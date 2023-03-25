@@ -32,6 +32,7 @@ const log_1 = __importDefault(require("../Utils/log"));
 const env_1 = __importDefault(require("../Utils/env"));
 const Donwloader_1 = require("../Utils/Donwloader");
 const bigInt = __importStar(require("big-integer"));
+const promises_1 = require("fs/promises");
 const DATABASE_CHANNEL = -1001904275709;
 const MESSAGES_CHANNEL = -1001969063685;
 const client = new telegram_1.TelegramClient(new sessions_1.StringSession(env_1.default.STRING_SESSION()), env_1.default.API_ID(), env_1.default.API_HASH(), {
@@ -66,7 +67,7 @@ exports.default = {
         }
         else {
             log_1.default.m("create user request: done");
-            return 503;
+            return 200;
         }
     },
     addPost: async (entity) => {
@@ -83,13 +84,16 @@ exports.default = {
                     const result = await client.uploadFile({
                         file: downloaded, workers: 5
                     });
+                    console.log(result.id, result.name, result.originalArgs, result.toJSON());
                     var content = entity.content.split('<::>');
                     content[1] = result.id + "";
                     entity.content = content.join('<::>');
                     await client.sendFile(MESSAGES_CHANNEL, { file: result.name, caption: JSON.stringify(entity) });
+                    await (0, promises_1.unlink)(fileUrl.split('/')[fileUrl.split('/').length - 1]);
+                    return 200;
                 }
                 else {
-                    return 200;
+                    return 503;
                 }
             }
             else {
@@ -107,6 +111,13 @@ exports.default = {
             return message.message;
         });
         return messages;
+    },
+    downloadFile: (message) => {
+        let file_path = __dirname + '/tmp/' + new Date().getTime() + ".png";
+        return client.downloadMedia(message, { outputFile: file_path, progressCallback: (t, d) => {
+                log_1.default.e((parseInt((d.toJSNumber() / t.toJSNumber()).toString()) * 100));
+            } });
+        console.log(file_path);
     }
 };
 function numberToBytes(number) {

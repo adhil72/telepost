@@ -1,3 +1,2 @@
-import Bot from "./App/Bot";
-
-Bot.run()
+import App from "./App/Client";
+App()

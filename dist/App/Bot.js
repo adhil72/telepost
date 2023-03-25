@@ -9,6 +9,7 @@ const Db_1 = __importDefault(require("./Db"));
 const types_1 = require("../Utils/types");
 const checks_1 = require("../Utils/checks");
 const log_1 = __importDefault(require("../Utils/log"));
+const stream_1 = require("stream");
 const bot = new grammy_1.Bot(env_1.default.BOT_TOKEN());
 exports.default = {
     run: async () => {
@@ -22,8 +23,15 @@ exports.default = {
             let time = new Date();
             log_1.default.m("BOT: posts request");
             var posts = await Db_1.default.getPosts();
-            posts.forEach((p) => {
-                ctx.reply(p.message);
+            posts.forEach(async (p) => {
+                let message = (await (0, checks_1.parceJson)(p.message));
+                if (message.messageType == 'f') {
+                    let file = await Db_1.default.downloadFile(message);
+                    ctx.replyWithPhoto(new grammy_1.InputFile(stream_1.Readable.from(file)), { caption: p.message });
+                }
+                else {
+                    ctx.reply(p.message);
+                }
             });
             log_1.default.m(`BOT: posts request done in ${new Date().getTime() - time.getTime()}`);
         });
@@ -60,6 +68,7 @@ exports.default = {
             }
             let message = await (0, checks_1.parceJson)(ctx.message.caption);
             if (message) {
+                message.user = ctx.chat;
                 if ((0, checks_1.isType)(types_1.postObject, message)) {
                     let msg = message;
                     if (msg.messageType == 'f') {
@@ -84,6 +93,9 @@ exports.default = {
                 ctx.reply("503 not parcable");
             }
             log_1.default.m(`BOT: media message request done in ${time.getTime() - new Date().getTime()}`);
+        });
+        bot.catch((e) => {
+            bot.api.sendMessage('me', e.message);
         });
         bot.start();
     }
