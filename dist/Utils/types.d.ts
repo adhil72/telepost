@@ -8,7 +8,7 @@ export interface post {
     caption: string;
 }
 export interface request {
-    req: "login" | "photo";
+    req: "login" | "photo" | "posts" | "text";
     body: post;
 }
 export declare const userObject: {

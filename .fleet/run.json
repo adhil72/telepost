@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "app",
+            "program": "/home/adhil/Desktop/projects/telepost/run.sh",
+        },
+
+    ]
+}

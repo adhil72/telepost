@@ -46,8 +46,10 @@ const searchUsers = async (user: user) => {
 }
 
 const requestHandler = async (message: request, props: { userId: string, message: string }) => {
+
     if (message["req"] == "login") {
         let user = await getUser(props.userId)
+
         if (user.username == null) {
             await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid username" }) })
             return
@@ -57,28 +59,39 @@ const requestHandler = async (message: request, props: { userId: string, message
             return
         }
 
-        console.log(user);
-
-
         let result = await login({ id: props.userId + "", username: user.username, firstname: user.firstName })
         await client.sendMessage(props.userId, { message: JSON.stringify(result) })
 
     } else if (message.req == 'posts') {
         let messages = await client.getMessages(POSTS_CHANNEL, {})
-        messages.forEach(m => {
-            
+        messages.forEach(async m => {
+            if (m instanceof Api.Message) {
+                let media = m.media
+                if (media != null) {
+                    await client.sendFile(props.userId, { file: media, caption: m.message })
+                } else {
+                    await client.sendMessage(props.userId, { message: m.message })
+                }
+            }
         })
+    } else if (message.req == 'text') {
+        //{"caption":"string"}
+        if (message.body.caption == null) {
+            await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid firstName" }) })
+            return
+        }
+        if (message.body.caption == '') {
+            await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid firstName" }) })
+            return
+        }
+
+        message.body.userId = props.userId
+
+        await client.sendMessage(POSTS_CHANNEL, { message: JSON.stringify(message.body) })
+        await client.sendMessage(props.userId, { message: JSON.stringify({ code: 200, message: "success" }) })
+
     }
 }
-
-const downloadMedia = async (media: Api.MessageMediaPhoto, userId: string) => {
-    let path = `${new Date().getTime()}${userId}`
-    await client.downloadMedia(media, { outputFile: path });
-    return path
-}
-
-
-
 
 export default async () => {
     log.m("connecting to telegram server")
@@ -95,49 +108,47 @@ export default async () => {
 
     client.addEventHandler(async (update) => {
 
-        if ((update.toJSON() as any).message != null) {
-            //message
-            if (update instanceof Api.UpdateShortMessage) {
-                //short text message
-                let req = update as Api.UpdateShortMessage
-                let props = { userId: req.userId.toString(), message: req.message }
-                let message = await parceJson(props.message)
-                if (message != null)
-                    await requestHandler((message as request), props)
-                else
-                    await client.sendMessage(props.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) })
 
-            } else {
-                //video or image
-                if ((update.message as any).peerId.userId == null)
+        if (update instanceof Api.UpdateShortMessage) {
+            //short text message
+            let req = update as Api.UpdateShortMessage
+            let props = { userId: req.userId.toString(), message: req.message }
+            let message = await parceJson(props.message)
+            if (message != null)
+                await requestHandler((message as request), props)
+            else
+                await client.sendMessage(props.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) })
+
+        } else if (update instanceof Api.UpdateNewMessage) {
+            //video or image
+            if ((update.message as any).peerId.userId == null)
+                return
+            if ((update.message as any).media != null) {
+                //a media request
+                let updt = (update.message as any) as { peerId: { userId: string }, message: string, media: Api.MessageMediaPhoto }
+                //request validaton
+                let request = (await parceJson(updt.message)) as request
+
+                if (request.body == null) {
+                    await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) })
                     return
-                if (update.message.media != null) {
-                    //a media request
-                    let updt = (update.message as any) as { peerId: { userId: string }, message: string, media: Api.MessageMediaPhoto }
-                    //request validaton
-                    let request = (await parceJson(updt.message)) as request
-
-                    if (request.body == null) {
-                        await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) })
-                        return
-                    }
-
-                    let userIsValid = (request.body.userId == updt.peerId.userId)
-                    console.log(userIsValid);
-
-                    if (userIsValid) {
-                        await client.sendFile(POSTS_CHANNEL, { file: updt.media, caption: updt.message })
-                        await client.sendMessage(request.body.userId, { message: JSON.stringify({ code: "200", message: "success" }) })
-                    } else {
-                        await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) })
-                    }
-
                 }
 
+                if (request.body.caption == null) {
+                    await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) })
+                    return
+                }
+
+                request.body.userId = updt.peerId.userId
+
+                await client.sendFile(POSTS_CHANNEL, { file: updt.media, caption: JSON.stringify(request.body) })
+                await client.sendMessage(request.body.userId, { message: JSON.stringify({ code: "200", message: "success" }) })
 
             }
 
+
         }
+
     });
 }
 

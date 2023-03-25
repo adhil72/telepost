@@ -52,18 +52,37 @@ const requestHandler = async (message, props) => {
             await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid firstName" }) });
             return;
         }
-        console.log(user);
         let result = await login({ id: props.userId + "", username: user.username, firstname: user.firstName });
         await client.sendMessage(props.userId, { message: JSON.stringify(result) });
     }
-    else if (message.req == 'photo') {
-        log_1.default.e(message.body);
+    else if (message.req == 'posts') {
+        let messages = await client.getMessages(POSTS_CHANNEL, {});
+        messages.forEach(async (m) => {
+            if (m instanceof telegram_1.Api.Message) {
+                let media = m.media;
+                if (media != null) {
+                    await client.sendFile(props.userId, { file: media, caption: m.message });
+                }
+                else {
+                    await client.sendMessage(props.userId, { message: m.message });
+                }
+            }
+        });
     }
-};
-const downloadMedia = async (media, userId) => {
-    let path = `${new Date().getTime()}${userId}`;
-    await client.downloadMedia(media, { outputFile: path });
-    return path;
+    else if (message.req == 'text') {
+        //{"caption":"string"}
+        if (message.body.caption == null) {
+            await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid firstName" }) });
+            return;
+        }
+        if (message.body.caption == '') {
+            await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid firstName" }) });
+            return;
+        }
+        message.body.userId = props.userId;
+        await client.sendMessage(POSTS_CHANNEL, { message: JSON.stringify(message.body) });
+        await client.sendMessage(props.userId, { message: JSON.stringify({ code: 200, message: "success" }) });
+    }
 };
 exports.default = async () => {
     log_1.default.m("connecting to telegram server");
@@ -76,42 +95,36 @@ exports.default = async () => {
     log_1.default.m("connected to telegram server");
     log_1.default.m("listening for requests");
     client.addEventHandler(async (update) => {
-        if (update.toJSON().message != null) {
-            //message
-            if (update instanceof telegram_1.Api.UpdateShortMessage) {
-                //short text message
-                let req = update;
-                let props = { userId: req.userId.toString(), message: req.message };
-                let message = await (0, checks_1.parceJson)(props.message);
-                if (message != null)
-                    await requestHandler(message, props);
-                else
-                    await client.sendMessage(props.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) });
-            }
-            else {
-                //video or image
-                if (update.message.peerId.userId == null)
+        if (update instanceof telegram_1.Api.UpdateShortMessage) {
+            //short text message
+            let req = update;
+            let props = { userId: req.userId.toString(), message: req.message };
+            let message = await (0, checks_1.parceJson)(props.message);
+            if (message != null)
+                await requestHandler(message, props);
+            else
+                await client.sendMessage(props.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) });
+        }
+        else if (update instanceof telegram_1.Api.UpdateNewMessage) {
+            //video or image
+            if (update.message.peerId.userId == null)
+                return;
+            if (update.message.media != null) {
+                //a media request
+                let updt = update.message;
+                //request validaton
+                let request = (await (0, checks_1.parceJson)(updt.message));
+                if (request.body == null) {
+                    await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) });
                     return;
-                if (update.message.media != null) {
-                    //a media request
-                    let updt = update.message;
-                    //request validaton
-                    let request = (await (0, checks_1.parceJson)(updt.message));
-                    let s = { req: "photo", body: { caption: "hello", userId: updt.peerId.userId } };
-                    if (request.body == null) {
-                        await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) });
-                        return;
-                    }
-                    let userIsValid = (request.body.userId == updt.peerId.userId);
-                    console.log(userIsValid);
-                    if (userIsValid) {
-                        await client.sendFile(POSTS_CHANNEL, { file: updt.media, caption: updt.message });
-                        await client.sendMessage(request.body.userId, { message: JSON.stringify({ code: "200", message: "success" }) });
-                    }
-                    else {
-                        await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) });
-                    }
                 }
+                if (request.body.caption == null) {
+                    await client.sendMessage(updt.peerId.userId, { message: JSON.stringify({ code: "503", message: "invalid request" }) });
+                    return;
+                }
+                request.body.userId = updt.peerId.userId;
+                await client.sendFile(POSTS_CHANNEL, { file: updt.media, caption: JSON.stringify(request.body) });
+                await client.sendMessage(request.body.userId, { message: JSON.stringify({ code: "200", message: "success" }) });
             }
         }
     });
