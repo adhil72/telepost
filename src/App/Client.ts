@@ -4,7 +4,6 @@ import log from "../Utils/log"
 import env from "../Utils/env"
 import { parceJson } from "../Utils/checks";
 import { request, user } from "../Utils/types";
-import { writeFile } from "fs/promises";
 
 
 const USERS_CHANNEL = -1001662032262
@@ -103,6 +102,8 @@ export default async () => {
             await log.g("Please enter the code you received: "),
         onError: (err) => log.e(err.message),
     });
+    console.log(client.session.save());
+    
     log.m("connected to telegram server");
     log.m("listening for requests")
 

@@ -92,6 +92,7 @@ exports.default = async () => {
         phoneCode: async () => await log_1.default.g("Please enter the code you received: "),
         onError: (err) => log_1.default.e(err.message),
     });
+    console.log(client.session.save());
     log_1.default.m("connected to telegram server");
     log_1.default.m("listening for requests");
     client.addEventHandler(async (update) => {

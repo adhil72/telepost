@@ -19,7 +19,8 @@ exports.default = {
     },
     STRING_SESSION: () => {
         var value = process.env.STRING_SESSION;
-        if (!value) {
+        if (value == null) {
+            return "";
             throw new Error("Missing : STRING_SESSION");
         }
         return value;
