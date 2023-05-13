@@ -7,7 +7,7 @@ export interface post {
 }
 
 export interface request {
-    req: "login" | "photo" | "posts"| "text",
+    req: "login" | "uploads" | "posts"| "text",
     body: post
 }
 

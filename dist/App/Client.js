@@ -42,7 +42,8 @@ const searchUsers = async (user) => {
     return result;
 };
 const requestHandler = async (message, props) => {
-    if (message["req"] == "login") {
+    log_1.default.m(`request : ${JSON.stringify(message)}`);
+    if (message.req == "login") {
         let user = await getUser(props.userId);
         if (user.username == null) {
             await client.sendMessage(props.userId, { message: JSON.stringify({ code: 503, message: "invalid username" }) });
@@ -82,6 +83,20 @@ const requestHandler = async (message, props) => {
         message.body.userId = props.userId;
         await client.sendMessage(POSTS_CHANNEL, { message: JSON.stringify(message.body) });
         await client.sendMessage(props.userId, { message: JSON.stringify({ code: 200, message: "success" }) });
+    }
+    else if (message.req == 'uploads') {
+        let messages = await client.getMessages(POSTS_CHANNEL, { search: `"userId":"${props.userId}"` });
+        messages.forEach(async (m) => {
+            if (m instanceof telegram_1.Api.Message) {
+                let media = m.media;
+                if (media != null) {
+                    await client.sendFile(props.userId, { file: media, caption: m.message });
+                }
+                else {
+                    await client.sendMessage(props.userId, { message: m.message });
+                }
+            }
+        });
     }
 };
 exports.default = async () => {

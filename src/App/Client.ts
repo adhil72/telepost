@@ -45,8 +45,8 @@ const searchUsers = async (user: user) => {
 }
 
 const requestHandler = async (message: request, props: { userId: string, message: string }) => {
-
-    if (message["req"] == "login") {
+    log.m(`request : ${JSON.stringify(message)}`)
+    if (message.req == "login") {
         let user = await getUser(props.userId)
 
         if (user.username == null) {
@@ -88,7 +88,19 @@ const requestHandler = async (message: request, props: { userId: string, message
 
         await client.sendMessage(POSTS_CHANNEL, { message: JSON.stringify(message.body) })
         await client.sendMessage(props.userId, { message: JSON.stringify({ code: 200, message: "success" }) })
-
+    } else if (message.req == 'uploads') {
+        let messages = await client.getMessages(POSTS_CHANNEL, { search: `"userId":"${props.userId}"` })
+        messages.forEach(async m => {
+            if (m instanceof Api.Message) {
+                let media = m.media
+                if (media != null) {
+                    await client.sendFile(props.userId, { file: media, caption: m.message })
+                } else {
+                    await client.sendMessage(props.userId, { message: m.message })
+                }
+            }
+        })
+        
     }
 }
 
@@ -103,7 +115,7 @@ export default async () => {
         onError: (err) => log.e(err.message),
     });
     console.log(client.session.save());
-    
+
     log.m("connected to telegram server");
     log.m("listening for requests")
 
